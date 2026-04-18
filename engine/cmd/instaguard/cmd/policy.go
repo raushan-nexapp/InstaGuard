@@ -2,15 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"strconv"
-	"text/tabwriter"
 	"os"
+	"strconv"
+	"strings"
+	"text/tabwriter"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
-// ---- policy struct (matches server response) ----
 type policy struct {
 	ID           int64  `json:"id"`
 	Name         string `json:"name"`
@@ -26,13 +26,11 @@ type policy struct {
 	Description  string `json:"description"`
 }
 
-// ---- parent "policy" command ----
 var policyCmd = &cobra.Command{
 	Use:   "policy",
 	Short: "Manage firewall policies",
 }
 
-// ---- policy list ----
 var policyListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all firewall policies",
@@ -46,32 +44,49 @@ var policyListCmd = &cobra.Command{
 		}
 
 		if resp.Count == 0 {
-			fmt.Println("No policies configured.")
+			fmt.Println("\n  No policies configured.\n")
 			return nil
 		}
 
-		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		bold := color.New(color.Bold).SprintFunc()
-		fmt.Fprintln(tw, bold("ID\tNAME\tSRC\tDST\tPROTO\tPORT\tACTION\tPRIO"))
+		dim := color.New(color.Faint).SprintFunc()
+		cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
+
+		line := strings.Repeat("─", 78)
+
+		fmt.Println()
+		fmt.Println(cyan("  Firewall Policies"))
+		fmt.Println(dim("  " + line))
+		fmt.Println()
+
+		tw := tabwriter.NewWriter(os.Stdout, 4, 4, 3, ' ', 0)
+		fmt.Fprintln(tw, "  "+bold("ID\tNAME\tSRC\tDST\tPROTO\tPORT\tACTION\tPRIO"))
+		fmt.Fprintln(tw, "  "+dim("──\t────────────────────\t────────\t────────\t──────\t──────\t──────\t────"))
+
 		for _, p := range resp.Policies {
-			action := p.Action
+			var action string
 			switch p.Action {
 			case "accept":
 				action = color.GreenString(p.Action)
 			case "drop", "reject":
 				action = color.RedString(p.Action)
+			default:
+				action = p.Action
 			}
-			fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n",
+			fmt.Fprintf(tw, "  %d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n",
 				p.ID, p.Name, p.SrcInterface, p.DstInterface,
 				p.Protocol, p.DstPort, action, p.Priority)
 		}
 		tw.Flush()
-		fmt.Printf("\n%d policies total\n", resp.Count)
+
+		fmt.Println()
+		fmt.Printf("  %s %d total\n", dim("→"), resp.Count)
+		fmt.Println(dim("  " + line))
+		fmt.Println()
 		return nil
 	},
 }
 
-// ---- policy show ----
 var policyShowCmd = &cobra.Command{
 	Use:   "show [id]",
 	Short: "Show one policy in detail",
@@ -81,24 +96,38 @@ var policyShowCmd = &cobra.Command{
 		if err := apiGet("/api/v1/policies/"+args[0], &p); err != nil {
 			return err
 		}
+
 		bold := color.New(color.Bold).SprintFunc()
-		fmt.Printf("%s\n", bold("Policy #"+strconv.FormatInt(p.ID, 10)))
-		fmt.Printf("  Name         : %s\n", p.Name)
-		fmt.Printf("  Description  : %s\n", p.Description)
-		fmt.Printf("  Source IF    : %s\n", p.SrcInterface)
-		fmt.Printf("  Dest IF      : %s\n", p.DstInterface)
-		fmt.Printf("  Source addr  : %s\n", p.SrcAddress)
-		fmt.Printf("  Dest addr    : %s\n", p.DstAddress)
-		fmt.Printf("  Protocol     : %s\n", p.Protocol)
-		fmt.Printf("  Dest port    : %s\n", p.DstPort)
-		fmt.Printf("  Action       : %s\n", p.Action)
-		fmt.Printf("  Enabled      : %t\n", p.Enabled)
-		fmt.Printf("  Priority     : %d\n", p.Priority)
+		dim := color.New(color.Faint).SprintFunc()
+		cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
+		line := strings.Repeat("─", 50)
+
+		fmt.Println()
+		fmt.Println(cyan("  Policy #" + strconv.FormatInt(p.ID, 10)))
+		fmt.Println(dim("  " + line))
+		fmt.Printf("    %-13s %s\n", bold("Name"), p.Name)
+		if p.Description != "" {
+			fmt.Printf("    %-13s %s\n", bold("Description"), p.Description)
+		}
+		fmt.Printf("    %-13s %s → %s\n", bold("Interface"), p.SrcInterface, p.DstInterface)
+		fmt.Printf("    %-13s %s → %s\n", bold("Address"), p.SrcAddress, p.DstAddress)
+		fmt.Printf("    %-13s %s dport %s\n", bold("Match"), p.Protocol, p.DstPort)
+		action := p.Action
+		switch p.Action {
+		case "accept":
+			action = color.GreenString(p.Action)
+		case "drop", "reject":
+			action = color.RedString(p.Action)
+		}
+		fmt.Printf("    %-13s %s\n", bold("Action"), action)
+		fmt.Printf("    %-13s %t\n", bold("Enabled"), p.Enabled)
+		fmt.Printf("    %-13s %d\n", bold("Priority"), p.Priority)
+		fmt.Println(dim("  " + line))
+		fmt.Println()
 		return nil
 	},
 }
 
-// ---- policy add ----
 var (
 	addName, addSrc, addDst, addSrcAddr, addDstAddr, addProto, addPort, addAction, addDesc string
 	addPriority                                                                            int
@@ -124,13 +153,13 @@ var policyAddCmd = &cobra.Command{
 		if err := apiSend("POST", "/api/v1/policies", body, &created); err != nil {
 			return err
 		}
-		color.Green("✓ created policy #%d: %s", created.ID, created.Name)
-		fmt.Println("  (run `instaguard apply --commit` to activate)")
+		color.Green("\n  ✓ created policy #%d: %s", created.ID, created.Name)
+		color.New(color.Faint).Println("    run 'instaguard apply --commit' to activate")
+		fmt.Println()
 		return nil
 	},
 }
 
-// ---- policy delete ----
 var policyDeleteCmd = &cobra.Command{
 	Use:   "delete [id]",
 	Short: "Delete a policy by ID",
@@ -139,13 +168,13 @@ var policyDeleteCmd = &cobra.Command{
 		if err := apiSend("DELETE", "/api/v1/policies/"+args[0], nil, nil); err != nil {
 			return err
 		}
-		color.Red("✗ deleted policy #%s", args[0])
-		fmt.Println("  (run `instaguard apply --commit` to activate)")
+		color.Red("\n  ✗ deleted policy #%s", args[0])
+		color.New(color.Faint).Println("    run 'instaguard apply --commit' to activate")
+		fmt.Println()
 		return nil
 	},
 }
 
-// ---- apply command ----
 var applyCommit bool
 
 var applyCmd = &cobra.Command{
@@ -167,16 +196,15 @@ var applyCmd = &cobra.Command{
 		}
 		if resp.DryRun {
 			fmt.Println(resp.Rendered)
-			color.Yellow("\n[dry-run] %d policies rendered. Add --commit to apply.", resp.Policies)
+			color.Yellow("\n  [dry-run] %d policies rendered. add --commit to apply.\n", resp.Policies)
 		} else {
-			color.Green("✓ applied %d policies to kernel (status: %s)", resp.Policies, resp.Status)
+			color.Green("\n  ✓ applied %d policies to kernel (status: %s)\n", resp.Policies, resp.Status)
 		}
 		return nil
 	},
 }
 
 func init() {
-	// flags for `policy add`
 	policyAddCmd.Flags().StringVar(&addName, "name", "", "policy name (required)")
 	policyAddCmd.Flags().StringVar(&addSrc, "src", "", "source interface, e.g. enp2s0 (required)")
 	policyAddCmd.Flags().StringVar(&addDst, "dst", "", "destination interface, e.g. enp1s0 (required)")
@@ -192,10 +220,8 @@ func init() {
 	policyAddCmd.MarkFlagRequired("dst")
 	policyAddCmd.MarkFlagRequired("action")
 
-	// flags for `apply`
-	applyCmd.Flags().BoolVar(&applyCommit, "commit", false, "actually write config and reload kernel (otherwise dry-run)")
+	applyCmd.Flags().BoolVar(&applyCommit, "commit", false, "actually write config and reload kernel")
 
-	// wire up tree
 	policyCmd.AddCommand(policyListCmd)
 	policyCmd.AddCommand(policyShowCmd)
 	policyCmd.AddCommand(policyAddCmd)
