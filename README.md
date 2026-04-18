@@ -7,9 +7,12 @@ A FortiGate-inspired firewall OS built from scratch on Debian 13.
 
 ## Status
 
+## Status
+
 - [x] Milestone 1 — Base router (nftables + DHCP + DNS)
-- [x] Milestone 2 — Go config engine + REST API
-- [ ] Milestone 3 — Web UI + CLI
+- [x] Milestone 2 — Go config engine + REST API + SQLite CMDB
+- [x] Milestone 3 (part 1) — CLI tool `instaguard` with Cobra + tab completion
+- [ ] Milestone 3 (part 2) — Web UI (React dashboard)
 - [ ] Milestone 4 — IPS (Suricata), VPN (WireGuard), BGP/OSPF (FRR)
 - [ ] Milestone 5 — ISO packaging with Debian live-build
 - [ ] Milestone 6 — v1.0 release
