@@ -1,0 +1,24 @@
+# Go build artifacts
+engine/bin/
+engine/*.test
+*.out
+
+# Local runtime data
+*.db
+*.sqlite
+*.log
+
+# Editor temp files
+*.swp
+*~
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+build/
+dist/
+*.iso
