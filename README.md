@@ -5,7 +5,6 @@ A FortiGate-inspired firewall OS built from scratch on Debian 13.
 **"Instant protection for your network."**
 ![InstaGuard CLI](docs/screenshots/cli-v0.1.0.png)
 
-## Status
 
 ## Status
 
