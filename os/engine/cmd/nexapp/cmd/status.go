@@ -38,7 +38,7 @@ var statusCmd = &cobra.Command{
 		line := strings.Repeat("─", 50)
 
 		fmt.Println()
-		fmt.Println(cyan("  NexappOS"))
+		fmt.Println(cyan("  NexappOS Firewall"))
 		fmt.Println(dim("  " + line))
 		fmt.Println()
 		fmt.Println(bold("  Engine"))
