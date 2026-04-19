@@ -154,7 +154,7 @@ var policyAddCmd = &cobra.Command{
 			return err
 		}
 		color.Green("\n  ✓ created policy #%d: %s", created.ID, created.Name)
-		color.New(color.Faint).Println("    run 'instaroute apply --commit' to activate")
+		color.New(color.Faint).Println("    run 'nexapp apply --commit' to activate")
 		fmt.Println()
 		return nil
 	},
@@ -169,7 +169,7 @@ var policyDeleteCmd = &cobra.Command{
 			return err
 		}
 		color.Red("\n  ✗ deleted policy #%s", args[0])
-		color.New(color.Faint).Println("    run 'instaroute apply --commit' to activate")
+		color.New(color.Faint).Println("    run 'nexapp apply --commit' to activate")
 		fmt.Println()
 		return nil
 	},

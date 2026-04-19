@@ -75,7 +75,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	dbPath := os.Getenv("NEXAPP_DB")
 	if dbPath == "" {
-		dbPath = "data/instaroute.db"
+		dbPath = "data/nexapp.db"
 	}
 
 	var err error

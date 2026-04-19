@@ -91,7 +91,7 @@ func (g *NftablesGenerator) Apply(policies []models.Policy) (string, error) {
 
 // validate runs the ruleset through `nft -c` (check only, no apply).
 func (g *NftablesGenerator) validate(rendered string) error {
-	tmpFile, err := os.CreateTemp("", "instaroute-check-*.nft")
+	tmpFile, err := os.CreateTemp("", "nexapp-check-*.nft")
 	if err != nil {
 		return err
 	}

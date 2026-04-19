@@ -1,4 +1,4 @@
-// instaroute is the CLI client for the NexappOS firewall engine.
+// nexapp is the CLI client for the NexappOS firewall engine.
 package main
 
 import (
