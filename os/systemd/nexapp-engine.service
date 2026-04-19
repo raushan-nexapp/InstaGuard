@@ -1,0 +1,18 @@
+[Unit]
+Description=NexappOS Management Engine
+After=network.target nftables.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/nexappos/os/engine
+Environment=NEXAPP_DB=/root/nexappos/os/engine/data/nexapp.db
+ExecStart=/root/nexappos/os/engine/bin/nexapp-engine
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

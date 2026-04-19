@@ -1,8 +1,8 @@
 #!/bin/bash
-# InstaGuard — apply Milestone 1 configs
+# InstaRoute — apply Milestone 1 configs
 set -e
 
-echo "🛡️  InstaGuard — applying Milestone 1 configs..."
+echo "🛡️  InstaRoute — applying Milestone 1 configs..."
 
 cp configs/nftables.conf /etc/nftables.conf
 cp configs/dhcpd.conf    /etc/dhcp/dhcpd.conf
@@ -12,4 +12,4 @@ systemctl restart nftables
 systemctl restart isc-dhcp-server
 systemctl restart dnsmasq
 
-echo "✅  InstaGuard Milestone 1 applied successfully"
+echo "✅  InstaRoute Milestone 1 applied successfully"
