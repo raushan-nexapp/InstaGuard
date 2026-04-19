@@ -1,4 +1,4 @@
-// Package cmd defines all instaroute CLI commands using Cobra.
+// Package cmd defines all nexapp CLI commands using Cobra.
 package cmd
 
 import (
@@ -22,10 +22,10 @@ firewall policies, interfaces, and runtime configuration without editing
 config files by hand.
 
 Examples:
-  instaroute status
-  instaroute policy list
-  instaroute policy add --name allow-web --src enp2s0 --dst enp1s0 --port 443 --proto tcp --action accept
-  instaroute apply --commit`,
+  nexapp status
+  nexapp policy list
+  nexapp policy add --name allow-web --src enp2s0 --dst enp1s0 --port 443 --proto tcp --action accept
+  nexapp apply --commit`,
 	Version: "0.1.0",
 }
 
