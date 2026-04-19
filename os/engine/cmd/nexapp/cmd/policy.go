@@ -2,10 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -31,6 +29,27 @@ var policyCmd = &cobra.Command{
 	Short: "Manage firewall policies",
 }
 
+// pad right-pads a string to n visible characters (ignoring ANSI codes).
+func pad(s string, n int) string {
+	visible := len([]rune(s))
+	if visible >= n {
+		return s
+	}
+	return s + strings.Repeat(" ", n-visible)
+}
+
+// colorAction returns the action colored, plus its raw length for column math.
+func colorAction(a string) (string, int) {
+	switch a {
+	case "accept":
+		return color.GreenString(a), len(a)
+	case "drop", "reject":
+		return color.RedString(a), len(a)
+	default:
+		return a, len(a)
+	}
+}
+
 var policyListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all firewall policies",
@@ -52,32 +71,67 @@ var policyListCmd = &cobra.Command{
 		dim := color.New(color.Faint).SprintFunc()
 		cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
 
-		line := strings.Repeat("─", 78)
+		// column widths
+		wID, wName, wIF, wProto, wPort, wAction, wPrio := 4, 22, 8, 6, 6, 8, 6
+
+		// dynamic name width (cap at 30)
+		for _, p := range resp.Policies {
+			if len(p.Name)+2 > wName && len(p.Name) < 30 {
+				wName = len(p.Name) + 2
+			}
+		}
+
+		totalW := wID + wName + wIF*2 + wProto + wPort + wAction + wPrio + 10
+		line := strings.Repeat("─", totalW)
 
 		fmt.Println()
-		fmt.Println(cyan("  Firewall Policies"))
+		fmt.Println(cyan("  Policies"))
 		fmt.Println(dim("  " + line))
 		fmt.Println()
 
-		tw := tabwriter.NewWriter(os.Stdout, 4, 4, 3, ' ', 0)
-		fmt.Fprintln(tw, "  "+bold("ID\tNAME\tSRC\tDST\tPROTO\tPORT\tACTION\tPRIO"))
-		fmt.Fprintln(tw, "  "+dim("──\t────────────────────\t────────\t────────\t──────\t──────\t──────\t────"))
+		// header row
+		header := fmt.Sprintf("  %s%s%s%s%s%s%s%s",
+			pad("ID", wID),
+			pad("NAME", wName),
+			pad("SRC", wIF),
+			pad("DST", wIF),
+			pad("PROTO", wProto),
+			pad("PORT", wPort),
+			pad("ACTION", wAction),
+			pad("PRIO", wPrio),
+		)
+		fmt.Println(bold(header))
 
+		// divider row
+		divider := fmt.Sprintf("  %s%s%s%s%s%s%s%s",
+			pad(strings.Repeat("─", 2), wID),
+			pad(strings.Repeat("─", wName-2), wName),
+			pad(strings.Repeat("─", wIF-2), wIF),
+			pad(strings.Repeat("─", wIF-2), wIF),
+			pad(strings.Repeat("─", wProto-2), wProto),
+			pad(strings.Repeat("─", wPort-2), wPort),
+			pad(strings.Repeat("─", wAction-2), wAction),
+			pad(strings.Repeat("─", wPrio-2), wPrio),
+		)
+		fmt.Println(dim(divider))
+
+		// data rows
 		for _, p := range resp.Policies {
-			var action string
-			switch p.Action {
-			case "accept":
-				action = color.GreenString(p.Action)
-			case "drop", "reject":
-				action = color.RedString(p.Action)
-			default:
-				action = p.Action
-			}
-			fmt.Fprintf(tw, "  %d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n",
-				p.ID, p.Name, p.SrcInterface, p.DstInterface,
-				p.Protocol, p.DstPort, action, p.Priority)
+			actionColored, actionRaw := colorAction(p.Action)
+			// pad action BEFORE coloring using the raw length
+			actionPadded := actionColored + strings.Repeat(" ", wAction-actionRaw)
+
+			fmt.Printf("  %s%s%s%s%s%s%s%s\n",
+				pad(strconv.FormatInt(p.ID, 10), wID),
+				pad(p.Name, wName),
+				pad(p.SrcInterface, wIF),
+				pad(p.DstInterface, wIF),
+				pad(p.Protocol, wProto),
+				pad(p.DstPort, wPort),
+				actionPadded,
+				pad(strconv.Itoa(p.Priority), wPrio),
+			)
 		}
-		tw.Flush()
 
 		fmt.Println()
 		fmt.Printf("  %s %d total\n", dim("→"), resp.Count)
@@ -112,14 +166,8 @@ var policyShowCmd = &cobra.Command{
 		fmt.Printf("    %-13s %s → %s\n", bold("Interface"), p.SrcInterface, p.DstInterface)
 		fmt.Printf("    %-13s %s → %s\n", bold("Address"), p.SrcAddress, p.DstAddress)
 		fmt.Printf("    %-13s %s dport %s\n", bold("Match"), p.Protocol, p.DstPort)
-		action := p.Action
-		switch p.Action {
-		case "accept":
-			action = color.GreenString(p.Action)
-		case "drop", "reject":
-			action = color.RedString(p.Action)
-		}
-		fmt.Printf("    %-13s %s\n", bold("Action"), action)
+		actionColored, _ := colorAction(p.Action)
+		fmt.Printf("    %-13s %s\n", bold("Action"), actionColored)
 		fmt.Printf("    %-13s %t\n", bold("Enabled"), p.Enabled)
 		fmt.Printf("    %-13s %d\n", bold("Priority"), p.Priority)
 		fmt.Println(dim("  " + line))
