@@ -1,11 +1,13 @@
 # Go build artifacts
-engine/bin/
-engine/*.test
+os/engine/bin/
+*.test
 *.out
 
-# Local runtime data
+# SQLite databases (runtime data)
 *.db
 *.sqlite
+
+# Logs
 *.log
 
 # Editor temp files
