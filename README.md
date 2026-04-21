@@ -17,7 +17,7 @@ for Nexapp's router/firewall products.
 
 Admin -> CLI (nexapp) -> REST API (Go) -> SQLite -> templates -> nftables/dnsmasq -> Linux kernel
 
-- Base OS: Debian 13 Trixie, Linux kernel 6.12 LTS
+- Base OS: Debian 13 Trixie, Linux kernel 6.12 LTS (tested on 7.0)
 - Management daemon: nexapp-engine (Go, runs as systemd service)
 - CLI tool: nexapp (Go + Cobra)
 - Config database: SQLite (NexappOS CMDB)
